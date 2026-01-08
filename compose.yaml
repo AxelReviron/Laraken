@@ -1,0 +1,68 @@
+services:
+    app:
+        container_name: laraken_app
+        build:
+            context: .
+            dockerfile: Dockerfile
+        command: [ "/bin/bash", "/scripts/setup.sh" ]
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ./setup.sh:/scripts/setup.sh
+            - app_storage:/app/storage
+            - app_cache:/app/bootstrap/cache
+            - caddy_data:/data
+            - caddy_config:/config
+        networks:
+            - laraken_network
+        cap_drop: # Remove all capabilities
+            - ALL
+        cap_add:
+            - DAC_OVERRIDE
+            - NET_BIND_SERVICE
+        security_opt: # Prevents privilege escalation
+            - no-new-privileges:true
+        tmpfs:
+            - /tmp
+        depends_on:
+            db:
+                condition: service_healthy
+
+    db:
+        container_name: laraken_db
+        image: mariadb:11.8
+        environment:
+            MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${DB_DATABASE}
+            MYSQL_USER: ${DB_USERNAME}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+        volumes:
+            - db_data:/var/lib/mysql
+        networks:
+            - laraken_network
+        cap_drop: # Remove all capabilities
+            - ALL
+        cap_add: # Add only necessary capabilities
+            - CHOWN
+            - DAC_OVERRIDE
+            - SETGID
+            - SETUID
+        security_opt: # Prevents privilege escalation
+            - no-new-privileges:true
+        healthcheck:
+            test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+            interval: 5s
+            timeout: 3s
+            retries: 5
+
+volumes:
+    app_storage:
+    app_cache:
+    caddy_data:
+    caddy_config:
+    db_data:
+
+networks:
+    laraken_network:
+        driver: bridge

@@ -1,0 +1,71 @@
+services:
+  app:
+    container_name: laraken
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    entrypoint: php artisan octane:frankenphp --workers=1 --max-requests=1
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      db:
+        condition: service_healthy
+      db_test:
+        condition: service_healthy
+    tty: true
+    networks:
+      - laraken_network
+
+  db:
+    container_name: laraken_db
+    image: mariadb:11.8
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - laraken_network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  db_test:
+    container_name: laraken_db_test
+    image: mariadb:11.8
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: test_root
+      MYSQL_DATABASE: laraken_test
+      MYSQL_USER: test_user
+      MYSQL_PASSWORD: test_pass
+    volumes:
+      - db_test_data:/var/lib/mysql
+    networks:
+      - laraken_network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  caddy_data:
+  caddy_config:
+  db_data:
+  db_test_data:
+
+networks:
+  laraken_network:
+    driver: bridge
