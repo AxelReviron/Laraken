@@ -128,8 +128,17 @@
             <code>
                 <span class="comment"># Clone the template</span><br>
                 <span class="command">git clone</span> https://github.com/AxelReviron/Laraken.git<br><br>
+
+                <span class="comment"># Navigate to the directory</span><br>
+                <span class="command">cd</span> laraken<br><br>
+
+                <span class="comment"># Copy the environment file and adjust as needed:</span><br>
+                <span class="comment"># You don't need to specify `APP_KEY`, it will automatically be generated</span><br>
+
+                <span class="command">cp</span> .env.example .env<br><br>
+
                 <span class="comment"># Start everything</span><br>
-                <span class="command">cd</span> laraken && <span class="command">docker compose up</span> <span class="flag">-d</span><br><br>
+                <span class="command">docker </span>compose <span class="flag">-f</span> compose.dev.yaml <span class="flag">-d</span><br><br>
                 <span class="comment"># You're live at http://localhost:8000 🚀</span>
             </code>
         </div>
